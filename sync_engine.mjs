@@ -73,7 +73,6 @@ function isIgnored(relPath) {
   if (norm.startsWith('node_modules/') || norm.startsWith('skills_zip/')) return true;
   if (norm.startsWith('scratch/') || norm.startsWith('temp/')) return true;
   if (norm.endsWith('.token') || norm.endsWith('.pat') || norm.endsWith('.tmp')) return true;
-  if (norm === 'sync_engine.mjs' || norm === 'auto_sync.bat') return false; // Cho phép đồng bộ cả tool đồng bộ
   return false;
 }
 
@@ -88,7 +87,7 @@ function getLocalFiles(dir, list = []) {
     if (stat.isDirectory()) {
       getLocalFiles(full, list);
     } else {
-      list.push({ fullPath: full, relPath: rel });
+      list.push({ fullPath: full, relPath: rel, mtime: stat.mtime });
     }
   }
   return list;
@@ -107,6 +106,7 @@ export async function syncTwoWay() {
   const latestCommitSha = ref.object.sha;
   const commitData = await api(`/git/commits/${latestCommitSha}`);
   const baseTreeSha = commitData.tree.sha;
+  const remoteCommitDate = new Date(commitData.committer ? commitData.committer.date : Date.now());
 
   // Lấy chi tiết toàn bộ file trên GitHub
   const remoteTreeData = await api(`/git/trees/${baseTreeSha}?recursive=1`);
@@ -130,11 +130,26 @@ export async function syncTwoWay() {
       const localBuf = fs.readFileSync(localPath);
       const localSha = calcGitBlobSha(localBuf);
       if (localSha !== rSha) {
-        needDownload = true;
+        // So sánh thời gian sửa đổi (mtime vs remoteCommitDate)
+        const localStat = fs.statSync(localPath);
+        // Nếu file local mới hơn commit trên GitHub, ta ưu tiên PUSH file local, KHÔNG ghi đè PULL
+        if (localStat.mtime > remoteCommitDate) {
+          needDownload = false;
+        } else {
+          needDownload = true;
+        }
       }
     }
 
     if (needDownload) {
+      // Bảo vệ: Nếu là file mcp_config.json và local có token thật, không ghi đè placeholder
+      if (rPath.endsWith('mcp_config.json') && fs.existsSync(localPath)) {
+        const currentLocal = fs.readFileSync(localPath, 'utf8');
+        if (currentLocal.includes('ghp_')) {
+          continue;
+        }
+      }
+
       console.log(`📥 [PULL] Đang tải từ GitHub về máy: ${rPath}`);
       const blob = await api(`/git/blobs/${rSha}`);
       const content = Buffer.from(blob.content, 'base64');
@@ -143,8 +158,9 @@ export async function syncTwoWay() {
       pullCount++;
     }
   }
+
   if (pullCount === 0) {
-    console.log(`✅ [PULL] Máy trạm đã cập nhật mới nhất với GitHub (0 tệp mới).`);
+    console.log(`✅ [PULL] Máy trạm đã cập nhật mới nhất từ GitHub.`);
   } else {
     console.log(`✅ [PULL] Hoàn tất tải về ${pullCount} tệp từ GitHub.`);
   }
@@ -170,7 +186,6 @@ export async function syncTwoWay() {
     if (remoteSha !== localSha) {
       toUpload.push({ file: f, buffer: contentBuf });
     } else {
-      // Giữ nguyên sha hiện có
       allTreeEntries.push({
         path: f.relPath,
         mode: '100644',
@@ -215,7 +230,7 @@ export async function syncTwoWay() {
     });
     console.log(`✅ [PUSH] Đã đẩy thành công lên nhánh ${BRANCH}! Commit: ${newCommit.sha.slice(0, 7)}`);
   } else {
-    console.log(`✅ [PUSH] GitHub đã có đầy đủ tệp mới nhất từ máy trạm (0 tệp cần đẩy).`);
+    console.log(`✅ [PUSH] GitHub đã có đầy đủ tệp mới nhất từ máy trạm.`);
   }
 
   console.log(`🎉 [KẾT QUẢ] ĐỒNG BỘ 2 CHIỀU HOÀN TẤT VÀ KHỚP 100%!\n`);
