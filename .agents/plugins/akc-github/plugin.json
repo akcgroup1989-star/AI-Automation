@@ -1,0 +1,9 @@
+{
+  "name": "akc-github-mcp",
+  "description": "MCP Server kết nối GitHub repository akcgroup1989-star/AI-Automation cho hệ thống AI Automation AKC Fitness",
+  "author": "AKC Fitness AI Automation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akcgroup1989-star/AI-Automation"
+  }
+}

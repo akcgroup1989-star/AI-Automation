@@ -1,0 +1,13 @@
+# Environment and Secret tokens
+.env
+*.token
+*.pat
+
+# Logs and scratch files
+*.log
+scratch/
+temp/
+
+# Node dependencies
+node_modules/
+npm-debug.log*
