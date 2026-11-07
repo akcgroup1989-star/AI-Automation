@@ -6,12 +6,21 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const BASE_DIR = __dirname;
+const LOG_FILE = path.join(BASE_DIR, 'sync.log');
+
+function logMsg(...args) {
+  const line = args.join(' ');
+  console.log(line);
+  try {
+    fs.appendFileSync(LOG_FILE, line + '\n', 'utf8');
+  } catch {}
+}
 
 // 1. Tải cấu hình từ .env
 function loadEnv() {
   const envPath = path.join(BASE_DIR, '.env');
   if (!fs.existsSync(envPath)) {
-    console.error('❌ Không tìm thấy file .env tại', envPath);
+    logMsg('❌ Không tìm thấy file .env tại', envPath);
     process.exit(1);
   }
   const content = fs.readFileSync(envPath, 'utf8');
@@ -36,7 +45,7 @@ const [OWNER, REPO] = REPO_FULL.split('/');
 const BRANCH = 'main';
 
 if (!TOKEN || TOKEN.includes('your_token_here')) {
-  console.error('❌ Lỗi: GITHUB_PERSONAL_ACCESS_TOKEN chưa hợp lệ trong file .env');
+  logMsg('❌ Lỗi: GITHUB_PERSONAL_ACCESS_TOKEN chưa hợp lệ trong file .env');
   process.exit(1);
 }
 
@@ -72,7 +81,7 @@ function isIgnored(relPath) {
   if (norm === '.env' || norm === '.git' || norm.startsWith('.git/')) return true;
   if (norm.startsWith('node_modules/') || norm.startsWith('skills_zip/')) return true;
   if (norm.startsWith('scratch/') || norm.startsWith('temp/')) return true;
-  if (norm.endsWith('.token') || norm.endsWith('.pat') || norm.endsWith('.tmp')) return true;
+  if (norm.endsWith('.token') || norm.endsWith('.pat') || norm.endsWith('.tmp') || norm.endsWith('.log')) return true;
   return false;
 }
 
@@ -96,10 +105,10 @@ function getLocalFiles(dir, list = []) {
 // Hàm thực thi đồng bộ 2 chiều (Bidirectional Sync)
 export async function syncTwoWay() {
   const timestamp = new Date().toLocaleString('vi-VN');
-  console.log(`\n==========================================================`);
-  console.log(`🔄 [${timestamp}] BẮT ĐẦU ĐỒNG BỘ 2 CHIỀU: MÁY TRẠM <==> GITHUB`);
-  console.log(`   Repo: https://github.com/${OWNER}/${REPO} (Branch: ${BRANCH})`);
-  console.log(`==========================================================`);
+  logMsg(`\n==========================================================`);
+  logMsg(`🔄 [${timestamp}] BẮT ĐẦU ĐỒNG BỘ 2 CHIỀU: MÁY TRẠM <==> GITHUB`);
+  logMsg(`   Repo: https://github.com/${OWNER}/${REPO} (Branch: ${BRANCH})`);
+  logMsg(`==========================================================`);
 
   // 1. Lấy thông tin commit và tree mới nhất trên GitHub
   const ref = await api(`/git/ref/heads/${BRANCH}`);
@@ -132,7 +141,6 @@ export async function syncTwoWay() {
       if (localSha !== rSha) {
         // So sánh thời gian sửa đổi (mtime vs remoteCommitDate)
         const localStat = fs.statSync(localPath);
-        // Nếu file local mới hơn commit trên GitHub, ta ưu tiên PUSH file local, KHÔNG ghi đè PULL
         if (localStat.mtime > remoteCommitDate) {
           needDownload = false;
         } else {
@@ -142,7 +150,6 @@ export async function syncTwoWay() {
     }
 
     if (needDownload) {
-      // Bảo vệ: Nếu là file mcp_config.json và local có token thật, không ghi đè placeholder
       if (rPath.endsWith('mcp_config.json') && fs.existsSync(localPath)) {
         const currentLocal = fs.readFileSync(localPath, 'utf8');
         if (currentLocal.includes('ghp_')) {
@@ -150,7 +157,7 @@ export async function syncTwoWay() {
         }
       }
 
-      console.log(`📥 [PULL] Đang tải từ GitHub về máy: ${rPath}`);
+      logMsg(`📥 [PULL] Đang tải từ GitHub về máy: ${rPath}`);
       const blob = await api(`/git/blobs/${rSha}`);
       const content = Buffer.from(blob.content, 'base64');
       fs.mkdirSync(path.dirname(localPath), { recursive: true });
@@ -160,9 +167,9 @@ export async function syncTwoWay() {
   }
 
   if (pullCount === 0) {
-    console.log(`✅ [PULL] Máy trạm đã cập nhật mới nhất từ GitHub.`);
+    logMsg(`✅ [PULL] Máy trạm đã cập nhật mới nhất từ GitHub.`);
   } else {
-    console.log(`✅ [PULL] Hoàn tất tải về ${pullCount} tệp từ GitHub.`);
+    logMsg(`✅ [PULL] Hoàn tất tải về ${pullCount} tệp từ GitHub.`);
   }
 
   // 3. CHIỀU 2: PUSH (Máy trạm Windows -> GitHub)
@@ -173,7 +180,6 @@ export async function syncTwoWay() {
   for (const f of localFiles) {
     let contentBuf = fs.readFileSync(f.fullPath);
 
-    // Bảo mật: Không bao giờ đẩy token thật lên file config
     if (f.relPath.endsWith('mcp_config.json')) {
       let str = contentBuf.toString('utf8');
       str = str.replace(/ghp_[A-Za-z0-9]+/g, 'YOUR_GITHUB_PERSONAL_ACCESS_TOKEN');
@@ -196,9 +202,9 @@ export async function syncTwoWay() {
   }
 
   if (toUpload.length > 0) {
-    console.log(`📤 [PUSH] Phát hiện ${toUpload.length} tệp tin mới/thay đổi tại máy trạm cần đẩy:`);
+    logMsg(`📤 [PUSH] Phát hiện ${toUpload.length} tệp tin mới/thay đổi tại máy trạm cần đẩy:`);
     for (const item of toUpload) {
-      console.log(`   + Tải lên: ${item.file.relPath}`);
+      logMsg(`   + Tải lên: ${item.file.relPath}`);
       const blob = await api('/git/blobs', 'POST', {
         content: item.buffer.toString('base64'),
         encoding: 'base64'
@@ -211,7 +217,7 @@ export async function syncTwoWay() {
       });
     }
 
-    console.log(`🔨 Đang tạo Tree và Commit mới trên GitHub...`);
+    logMsg(`🔨 Đang tạo Tree và Commit mới trên GitHub...`);
     const newTree = await api('/git/trees', 'POST', {
       base_tree: baseTreeSha,
       tree: allTreeEntries
@@ -228,27 +234,27 @@ export async function syncTwoWay() {
       sha: newCommit.sha,
       force: false
     });
-    console.log(`✅ [PUSH] Đã đẩy thành công lên nhánh ${BRANCH}! Commit: ${newCommit.sha.slice(0, 7)}`);
+    logMsg(`✅ [PUSH] Đã đẩy thành công lên nhánh ${BRANCH}! Commit: ${newCommit.sha.slice(0, 7)}`);
   } else {
-    console.log(`✅ [PUSH] GitHub đã có đầy đủ tệp mới nhất từ máy trạm.`);
+    logMsg(`✅ [PUSH] GitHub đã có đầy đủ tệp mới nhất từ máy trạm.`);
   }
 
-  console.log(`🎉 [KẾT QUẢ] ĐỒNG BỘ 2 CHIỀU HOÀN TẤT VÀ KHỚP 100%!\n`);
+  logMsg(`🎉 [KẾT QUẢ] ĐỒNG BỘ 2 CHIỀU HOÀN TẤT VÀ KHỚP 100%!\n`);
 }
 
 // Chế độ chạy: --watch (liên tục) hoặc --once (1 lần)
 const isWatch = process.argv.includes('--watch');
-const intervalSec = 60; // Chu kỳ đồng bộ ngầm 60 giây
+const intervalSec = 60;
 
 async function run() {
   if (isWatch) {
-    console.log(`🚀 Chế độ TỰ ĐỘNG ĐỒNG BỘ LIÊN TỤC đang chạy (Chu kỳ kiểm tra: mỗi ${intervalSec}s).`);
-    console.log(`   Nhấn Ctrl + C để dừng tiến trình.`);
+    logMsg(`🚀 Chế độ TỰ ĐỘNG ĐỒNG BỘ LIÊN TỤC đang chạy (Chu kỳ kiểm tra: mỗi ${intervalSec}s).`);
+    logMsg(`   Nhấn Ctrl + C để dừng tiến trình.`);
     while (true) {
       try {
         await syncTwoWay();
       } catch (err) {
-        console.error(`⚠️ Lỗi chu kỳ đồng bộ:`, err.message);
+        logMsg(`⚠️ Lỗi chu kỳ đồng bộ:`, err.message);
       }
       await new Promise(r => setTimeout(r, intervalSec * 1000));
     }
@@ -258,6 +264,6 @@ async function run() {
 }
 
 run().catch(err => {
-  console.error('❌ Lỗi tiến trình đồng bộ:', err);
+  logMsg('❌ Lỗi tiến trình đồng bộ:', err);
   process.exit(1);
 });

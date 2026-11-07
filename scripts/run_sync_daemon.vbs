@@ -1,4 +1,4 @@
 Set WshShell = CreateObject("WScript.Shell")
 WshShell.CurrentDirectory = "D:\AI Automation"
-' Chạy node sync_engine.mjs --watch ở chế độ ẩn (0 = ẩn hoàn toàn cửa sổ)
-WshShell.Run "node sync_engine.mjs --watch", 0, False
+' Chạy node sync_engine.mjs --watch ẩn hoàn toàn trong nền (0 = ẩn cửa sổ)
+WshShell.Run """C:\Program Files\nodejs\node.exe"" sync_engine.mjs --watch", 0, False

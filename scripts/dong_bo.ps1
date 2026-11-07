@@ -45,8 +45,11 @@ function Install-Startup {
         $s.WorkingDirectory = $rootDir
         $s.WindowStyle = 7
         $s.Save()
+        # Kích hoạt chạy ngầm ngay lập tức mà không cần đợi khởi động lại máy
+        Start-Process -FilePath "wscript.exe" -ArgumentList "`"$rootDir\scripts\run_sync_daemon.vbs`"" -WorkingDirectory $rootDir
         Write-Host " [THÀNH CÔNG] Đã đăng ký thành công vào Windows Startup!" -ForegroundColor Green
-        Write-Host " Từ nay, mỗi khi Sếp bật máy tính, hệ thống sẽ tự động đồng bộ ngầm." -ForegroundColor White
+        Write-Host " [ĐANG CHẠY] Tiến trình đồng bộ ngầm đã được KÍCH HOẠT CHẠY NGAY BÂY GIỜ!" -ForegroundColor Cyan
+        Write-Host " Từ nay, mỗi khi Sếp bật máy tính, hệ thống cũng sẽ tự động chạy ngầm." -ForegroundColor White
     } catch {
         Write-Host " [LỖI] Không thể cài đặt: $($_.Exception.Message)" -ForegroundColor Red
     }
