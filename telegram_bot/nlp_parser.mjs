@@ -1,18 +1,65 @@
 import { CONFIG } from './config.mjs';
 
 /**
+ * Phân loại loại tin nhắn: Chào hỏi, Hỏi đáp, hay Chỉ đạo giao việc
+ */
+export function classifyIntent(text) {
+  const clean = text.trim();
+  const lower = clean.toLowerCase();
+
+  // 1. Chào hỏi / Thăm dò
+  if (/^(alo+|chào em|chào bot|hello|hi|hey|ê|ơi|có đó không|em ơi|test)$/i.test(lower)) {
+    return { type: 'GREETING' };
+  }
+
+  // 2. Hỏi về Mail / Google Drive
+  if (/(mail|drive|gmail|google drive|hòm thư)/i.test(lower) && /(vào được không|có vào được|truy cập được|đọc được|kết nối chưa|xem được)/i.test(lower)) {
+    return { type: 'ASK_MAIL_DRIVE' };
+  }
+
+  // 3. Hỏi về năng lực chung
+  if (/(em làm được gì|bot làm được gì|giúp được gì|chức năng gì|khả năng gì)/i.test(lower)) {
+    return { type: 'ASK_CAPABILITY' };
+  }
+
+  // 4. Chỉ đạo giao việc rõ ràng (Bắt đầu bằng từ khóa hoặc chứa hành động công việc cụ thể)
+  const isExplicitTask = /^(giao việc|nhiệm vụ|task|lệnh):?/i.test(lower) ||
+    /^(làm|soạn|viết|rà soát|tuyển|nghiên cứu|lập|phân tích|kiểm tra|dựng|quay)\b/i.test(lower) ||
+    /(?:deadline|xong trước|hoàn thành trước|giao cho\s+[a-zà-ỹ0-9_]+|nhờ\s+[a-zà-ỹ0-9_]+)/i.test(lower) ||
+    /(kịch bản video|bài viết mkt|hợp đồng hội viên|kế hoạch tuần|báo cáo doanh thu|chiến dịch)/i.test(lower);
+
+  if (isExplicitTask) {
+    return { type: 'TASK_ASSIGNMENT' };
+  }
+
+  // 5. Nếu câu hỏi có dấu hỏi chấm hoặc từ để hỏi
+  if (/\?|sao|thế nào|không|chưa|được không|ở đâu/i.test(lower)) {
+    return { type: 'GENERAL_QUESTION' };
+  }
+
+  // Mặc định câu ngắn dưới 5 từ và không rõ nghĩa -> Coi như trò chuyện
+  if (clean.split(/\s+/).length < 5) {
+    return { type: 'GENERAL_CHAT' };
+  }
+
+  // Câu dài mô tả công việc -> Có thể là giao việc
+  return { type: 'TASK_ASSIGNMENT' };
+}
+
+/**
  * Phân tích câu lệnh tiếng Việt tự nhiên của Sếp để bóc tách thành phiếu giao việc chuẩn
  */
 export function parseTaskRequest(text) {
-  const lower = text.toLowerCase();
+  const cleanText = text.replace(/^(giao việc|nhiệm vụ|task|lệnh):\s*/i, '').trim();
+  const lower = cleanText.toLowerCase();
 
-  // 1. Kiểm tra đối tượng nhận việc: Nhân sự (người cụ thể) hay Agent AI
+  // 1. Kiểm tra đối tượng nhận việc: Nhân sự hay Agent AI
   let assigneeType = 'AGENT';
   let matchedAgentKey = null;
   let targetPerson = null;
 
   // Kiểm tra tên người cụ thể (ví dụ: @tuan, giao cho Nam, nhờ Mai...)
-  const personMatch = text.match(/(?:@([a-zA-Z0-9_]+)|giao cho\s+([A-ZÀ-Ỹa-zà-ỹ]+)|nhờ\s+([A-ZÀ-Ỹa-zà-ỹ]+))/i);
+  const personMatch = cleanText.match(/(?:@([a-zA-Z0-9_]+)|giao cho\s+([A-ZÀ-Ỹa-zà-ỹ]+)|nhờ\s+([A-ZÀ-Ỹa-zà-ỹ]+))/i);
   if (personMatch) {
     targetPerson = personMatch[1] || personMatch[2] || personMatch[3];
   }
@@ -61,7 +108,7 @@ export function parseTaskRequest(text) {
 
   // 2. Bóc tách thời hạn (Deadline)
   let deadline = 'Trong ngày làm việc';
-  const deadlineMatch = text.match(/(?:deadline|hạn|xong trước|trước|hoàn thành trước)\s+([^,.\n]+)/i);
+  const deadlineMatch = cleanText.match(/(?:deadline|hạn|xong trước|trước|hoàn thành trước)\s+([^,.\n]+)/i);
   if (deadlineMatch) {
     deadline = deadlineMatch[1].trim();
   } else if (/chiều mai/i.test(lower)) {
@@ -108,12 +155,12 @@ export function parseTaskRequest(text) {
   }
 
   return {
-    rawText: text,
+    rawText: cleanText,
     assigneeType,
     agent: agentInfo.name,
     codePrefix,
-    yeu_cau: text.trim(),
-    dau_vao: `Chỉ đạo trực tiếp từ Sếp Ricky qua Telegram: "${text.trim()}"`,
+    yeu_cau: cleanText,
+    dau_vao: `Chỉ đạo trực tiếp từ Sếp Ricky qua Telegram: "${cleanText}"`,
     dau_ra: dauRa,
     tieu_chi: 'Đạt ≥90 điểm theo thang thẩm định 100 của Hiến chương AKC',
     han: deadline,
