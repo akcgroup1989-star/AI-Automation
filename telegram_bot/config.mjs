@@ -33,6 +33,7 @@ export const CONFIG = {
   TASKS_FILE: path.join(__dirname, 'data', 'tasks.json'),
   AUDIT_LOG_FILE: path.join(ROOT_DIR, 'NHAT-KY-CONG-VIEC.md'),
   TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN || '9078759673:AAHWLXBF53nz-HBSCmmm9lxTNc9BPNgnOo4',
+  OPENAI_API_KEY: env.OPENAI_API_KEY,
   
   // 7 Agent chuyên trách của AKC Fitness
   AGENTS: {
