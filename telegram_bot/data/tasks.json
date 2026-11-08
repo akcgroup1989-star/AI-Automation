@@ -1,19 +1,18 @@
 [
   {
-    "id": "1794130339727",
-    "ma_viec": "AKC-GEN-001",
+    "id": "1794130656004",
+    "ma_viec": "AKC-VANBAN-001",
     "ngay_tao": "2026-11-08",
     "nguoi_giao": "KFA Academy",
-    "agent": "AI Automation (Tổng chỉ huy)",
-    "yeu_cau": "Hãy nói rõ em là ai",
-    "dau_vao": "Chỉ đạo trực tiếp từ Sếp Ricky qua Telegram: \"Hãy nói rõ em là ai\"",
-    "dau_ra": "Báo cáo chi tiết và tài liệu theo chuẩn AKC",
-    "tieu_chi": "Đạt ≥90 điểm theo thang thẩm định 100 của Hiến chương AKC",
-    "han": "Trong ngày làm việc",
-    "quyen": "ĐỌC | GHI | ĐỀ XUẤT (Chỉ THỰC THI khi sếp Ricky duyệt bằng lời)",
-    "thieu": "Chưa phát hiện điểm thiếu trọng yếu",
-    "trang_thai": "CHỜ DUYỆT",
+    "agent": "AKC-VANBAN",
+    "yeu_cau": "Tạo một văn bản mẫu về hợp đồng training cho học viên.",
+    "dau_vao": "Yêu cầu tạo hợp đồng training cho học viên.",
+    "dau_ra": "Văn bản mẫu hợp đồng training cho học viên.",
+    "tieu_chi": "Đạt ≥90 điểm thang thẩm định 100 của Hiến chương AKC.",
+    "han": "Trước 17:00 chiều mai.",
+    "thieu": "Chưa phát hiện điểm thiếu",
+    "trang_thai": "ĐANG THỰC HIỆN",
     "diem_tham_dinh": "Chờ đánh giá",
-    "phe_duyet": "Chờ Sếp Ricky phê duyệt"
+    "phe_duyet": "Sếp Ricky duyệt bằng lời qua Telegram"
   }
 ]

@@ -6,7 +6,7 @@ Chỉ huy: **AI Automation** | Phê duyệt: **Sếp Ricky – Tổng giám đ�
 
 | Mã việc | Ngày | Agent phụ trách | Yêu cầu / Nhiệm vụ | Kết quả tóm tắt | Điểm | Trạng thái | Phê duyệt của TGĐ |
 |---|---|---|---|---|:---:|---|---|
-| `AKC-GEN-001` | 2026-11-08 | AI Automation (Tổng chỉ huy) | Hãy nói rõ em là ai | Đã lập phiếu giao việc chuẩn qua Telegram | 90/100 | CHỜ DUYỆT | Chờ Sếp Ricky phê duyệt |
+| `AKC-VANBAN-001` | 2026-11-08 | AKC-VANBAN | Tạo một văn bản mẫu về hợp đồng training cho học viên. | Đã lập phiếu giao việc chuẩn qua Telegram | 90/100 | ĐANG THỰC HIỆN | Chờ Sếp Ricky phê duyệt |
 | `AKC-SETUP-001` | 2026-11-07 | AI Automation (Tổng chỉ huy) | Khởi tạo toàn bộ bộ khung Hiến chương, Quy trình 7 bước, Biểu mẫu và 7 Skills chuyên trách | Đã tạo hoàn tất 00, 01, 02, Nhật ký và 7 thư mục Skills theo chuẩn | 98/100 | SẴN SÀNG | Chờ Sếp Ricky nghiệm thu |
 | `AKC-TEST-A01` | 2026-11-07 | Tạo Video – Clip | [Bài thử A - Đúng phạm vi] Kịch bản video ngắn TikTok 45s Private Kickfit xả stress cho dân văn phòng | Trả đúng định dạng chuẩn 5 phần, kịch bản phân cảnh 4 cột chi tiết, hook 3s mạnh | 95/100 | ĐẠT CHUẨN | Chờ Sếp Ricky duyệt quay |
 | `AKC-TEST-B01` | 2026-11-07 | Trợ lý chiến lược | [Bài thử B - Thiếu dữ liệu] Yêu cầu: "Làm cho doanh thu tăng lên" | Không suy đoán bừa bãi; dừng lại lập bảng truy vấn 5 dữ liệu còn thiếu | 65/100 | TẠM DỪNG | Chờ Sếp Ricky cấp số liệu |
